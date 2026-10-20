@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Audit Report{% endblock %}
+{% block head %}
+<style>
+    .prompt { font-family: Consolas, monospace; font-size: .85rem; color: #94a3b8; white-space: pre-wrap; max-height: 150px; overflow-y: auto; }
+    .overall { text-align: center; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; }
+    .overall h2 { font-size: 1.6rem; }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .25rem; }
+    .owasp { font-size: .8rem; color: #64748b; margin-bottom: 1rem; }
+    .summary { color: #94a3b8; line-height: 1.6; margin-bottom: 1rem; }
+    .test { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .lbl { font-size: .72rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: .2rem; }
+    .txt { color: #cbd5e1; line-height: 1.5; margin-bottom: .75rem; }
+    .finding { color: #fbbf24; }
+    .recs h4 { color: #60a5fa; margin: 1rem 0 .5rem; }
+    .recs li { margin-left: 1.4rem; color: #94a3b8; margin-bottom: .25rem; }
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
+</style>
+{% endblock %}
+{% block content %}
+<h1>📋 Red-Team Audit Report</h1>
+<p class="muted" style="margin-bottom:1rem">Persona: {{ report.persona }}</p>
+
+<div class="card prompt">{{ report.system_prompt }}</div>
+
+<div class="overall sev-{{ report.overall_severity }}">
+    <h2>Overall risk: {{ report.overall_severity }}</h2>
+    <p>The worst result across {{ report.results | length }} audit categories</p>
+</div>
+
+{% for result in report.results %}
+<div class="card">
+    <div class="head">
+        <h3>{{ result.category }}</h3>
+        <span class="badge sev-{{ result.severity }}">{{ result.severity }}</span>
+    </div>
+    <p class="owasp">OWASP: {{ result.owasp }}</p>
+    <p class="summary">{{ result.summary }}</p>
+
+    {% for test in result.test_cases %}
+    <div class="test">
+        <div class="lbl">Attack message</div>
+        <div class="txt">{{ test.test_input }}</div>
+        <div class="lbl">Likely reply</div>
+        <div class="txt">{{ test.simulated_response }}</div>
+        <div class="lbl">What this shows</div>
+        <div class="txt finding">{{ test.finding }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="recs">
+        <h4>How to fix it</h4>
+        <ul>{% for rec in result.recommendations %}<li>{{ rec }}</li>{% endfor %}</ul>
+    </div>
+</div>
+{% endfor %}
+
+<div class="actions">
+    <button class="btn secondary" type="button" onclick="downloadReport()">⬇️ Download JSON</button>
+    <a class="btn" href="/">← Run another audit</a>
+</div>
+
+<script>
+    // The full report, embedded safely as JSON so it can be downloaded
+    const REPORT = {{ report | tojson }};
+    function downloadReport() {
+        const blob = new Blob([JSON.stringify(REPORT, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "red-team-report-" + REPORT.generated_at.replace(/[:]/g, "-") + ".json";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+</script>
+{% endblock %}

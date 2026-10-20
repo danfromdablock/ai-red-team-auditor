@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🔴 AI Red-Team Auditor</h1>
+<p class="muted" style="margin-bottom:2rem">
+    Paste the instructions an AI chatbot runs on. We'll try to trick it and show you where it's weak.
+</p>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+<form method="POST" action="/audit" onsubmit="document.getElementById('loading').style.display='block'">
+    <div class="field">
+        <label for="system_prompt">System prompt to audit</label>
+        <textarea id="system_prompt" name="system_prompt"
+            placeholder="e.g. You are a helpful customer service assistant for TechCo..."></textarea>
+        <p class="hint">The hidden instructions that tell an AI assistant how to behave.</p>
+    </div>
+
+    <div class="field">
+        <label for="persona">Who is talking to the chatbot?</label>
+        <select id="persona" name="persona">
+            {% for key, description in personas.items() %}
+            <option value="{{ key }}">{{ description | capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="custom_persona">…or describe your own user (optional)</label>
+        <input type="text" id="custom_persona" name="custom_persona"
+            placeholder="e.g. a small-business owner who is angry about a late refund">
+        <p class="hint">If you fill this in, it replaces the dropdown choice.</p>
+    </div>
+
+    <button class="btn wide" type="submit">🚨 Run Red-Team Audit</button>
+    <p id="loading">Running 4 attack rounds… this can take up to a minute.</p>
+</form>
+{% endblock %}
